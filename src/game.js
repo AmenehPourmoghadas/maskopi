@@ -104,7 +104,8 @@ export class GameRoom extends DurableObject {
     const player = { id: crypto.randomUUID(), name, avatar: msg.avatar, score: 0, correct: 0, index: 0, done: false, ws };
     this.players.set(player.id, player);
     this.sockets.set(ws, player.id);
-    send(ws, { t: "joined", name, avatar: player.avatar });
+    const music = this.game.quiz.music;
+    send(ws, { t: "joined", name, avatar: player.avatar, music: music && music !== "none" ? music : null });
     // Someone joining after the start begins at question 1 straight away.
     if (this.phase === "playing") this.sendQuestion(player);
     this.update();

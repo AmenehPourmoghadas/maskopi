@@ -53,6 +53,7 @@ function connect() {
 
 function backToPin(message) {
   ws = null;
+  Music.setTheme(null);
   $("pin-error").textContent = message;
   show("s-pin");
 }
@@ -64,6 +65,7 @@ function handle(msg) {
       else $("profile-error").textContent = msg.message;
       break;
     case "joined":
+      Music.setTheme(msg.music);
       $("me-avatar").textContent = msg.avatar;
       $("me-name").textContent = msg.name;
       show("s-wait");

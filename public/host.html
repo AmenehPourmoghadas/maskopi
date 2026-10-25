@@ -27,6 +27,14 @@
         <div class="panel">
           <h2 id="quiz-title">No quiz yet</h2>
           <ol id="quiz-list" class="quiz-list"></ol>
+          <label class="music-pick">🎵 Background music
+            <select id="music">
+              <option value="">Off</option>
+              <option value="playful" selected>Playful</option>
+              <option value="halloween">Halloween 🎃</option>
+            </select>
+          </label>
+          <p class="small">Plays on your screen and on the kids' tablets. Anyone can mute it with the 🔊 button.</p>
           <div class="row">
             <button id="start" disabled>Approve &amp; host game</button>
             <button id="save" class="secondary" disabled>Save</button>
@@ -71,6 +79,7 @@
   </main>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="/shared.js"></script>
+  <script src="/music.js"></script>
   <script src="/host.js"></script>
 </body>
 </html>

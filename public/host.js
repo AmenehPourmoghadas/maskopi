@@ -39,7 +39,7 @@ $("chat-form").onsubmit = async (e) => {
   const data = await fetch("/api/chat", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ messages: chat, quiz }),
+    body: JSON.stringify({ messages: chat, quiz: quiz && currentQuiz() }),
   })
     .then((r) => r.json())
     .catch(() => ({ error: "Could not reach the assistant. Check your connection." }));
@@ -59,11 +59,23 @@ $("chat-form").onsubmit = async (e) => {
   }
 };
 
-// ---------- Quiz preview, save, import, export ----------
+// ---------- Quiz preview, music, save, import, export ----------
+
+// The quiz plus the background music picked on the right-hand side.
+function currentQuiz() {
+  return { ...quiz, music: $("music").value || "none" };
+}
+
+$("music").onchange = () => Music.setTheme($("music").value);
+Music.setTheme($("music").value);
 
 function setQuiz(q, id = null) {
   quiz = q;
   savedId = id;
+  if (q.music) {
+    $("music").value = q.music === "none" ? "" : q.music;
+    Music.setTheme($("music").value);
+  }
   $("quiz-title").textContent = q.title;
   $("quiz-list").replaceChildren(
     ...q.questions.map((item) => {
@@ -134,7 +146,7 @@ function renderSaved() {
 $("save").onclick = () => {
   const list = loadSaved();
   const id = savedId || crypto.randomUUID();
-  const entry = { id, savedAt: Date.now(), quiz };
+  const entry = { id, savedAt: Date.now(), quiz: currentQuiz() };
   const i = list.findIndex((x) => x.id === id);
   if (i >= 0) list[i] = entry;
   else list.unshift(entry);
@@ -145,7 +157,7 @@ $("save").onclick = () => {
 };
 
 $("export").onclick = () => {
-  const blob = new Blob([JSON.stringify(quiz, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(currentQuiz(), null, 2)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = (quiz.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "quiz") + ".json";
@@ -160,7 +172,7 @@ $("import").onchange = async (e) => {
   try {
     const data = JSON.parse(await file.text());
     if (!Array.isArray(data.questions) || !data.questions.length) throw new Error();
-    setQuiz({ title: data.title || file.name, questions: data.questions });
+    setQuiz({ title: data.title || file.name, questions: data.questions, music: data.music });
   } catch {
     $("setup-error").textContent = "That file isn't a Maskopi quiz.";
   }
@@ -177,7 +189,7 @@ $("start").onclick = async () => {
   const res = await fetch("/api/game", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ quiz }),
+    body: JSON.stringify({ quiz: currentQuiz() }),
   }).catch(() => null);
   const data = res ? await res.json().catch(() => ({})) : { error: "Could not reach the server." };
   $("start").disabled = false;

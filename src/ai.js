@@ -11,6 +11,7 @@ How to work:
 \`\`\`
 - "correct" is the 0-based index of the right answer. Use 2 to 4 answers per question and 3 to 20 questions.
 - Questions have no time limit. Only if the user asks for a time limit, add "time" (seconds, 5 to 120) to the questions it applies to. If the user asks to remove a time limit, leave "time" out.
+- Background music: only if the user asks for it, add "music" at the top level of the quiz: "halloween" (spooky), "playful" (cheerful) or "none" (no music). These are the only themes.
 - Keep questions under 120 characters and answers under 60 characters. Match the words to the children's age.
 - Facts must be correct. If you are not sure about a fact, leave that question out.
 
