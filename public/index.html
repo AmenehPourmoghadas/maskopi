@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Maskopi</title>
+  <meta name="theme-color" content="#2b1055">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="player">
+    <section id="s-pin" class="card">
+      <h1 class="logo">Maskopi</h1>
+      <form id="pin-form">
+        <input id="pin" inputmode="numeric" maxlength="6" placeholder="Game PIN" autocomplete="off" required>
+        <button>Enter</button>
+      </form>
+      <p class="error" id="pin-error"></p>
+      <p class="small"><a href="/host">Host a game →</a></p>
+    </section>
+
+    <section id="s-profile" class="card" hidden>
+      <h2>Who are you?</h2>
+      <form id="profile-form">
+        <input id="name" maxlength="16" placeholder="Nickname" autocomplete="off" required>
+        <div id="avatars" class="avatars"></div>
+        <button>Let's go!</button>
+      </form>
+      <p class="error" id="profile-error"></p>
+      <p class="small">Use a fun nickname, not your real name.</p>
+    </section>
+
+    <section id="s-wait" class="card center" hidden>
+      <div class="big-avatar" id="me-avatar"></div>
+      <h2 id="me-name"></h2>
+      <p>You're in! Watch the big screen.</p>
+    </section>
+
+    <section id="s-question" class="wide" hidden>
+      <div class="row spread light"><span id="q-num"></span><span class="timer" id="q-timer"></span></div>
+      <p class="qtext" id="q-text"></p>
+      <div class="answers" id="q-answers"></div>
+    </section>
+
+    <section id="s-done" class="card center" hidden>
+      <h2>You finished! 🎉</h2>
+      <p class="points" id="d-score"></p>
+      <p id="d-correct"></p>
+      <p class="small">Waiting for the others to finish…</p>
+    </section>
+
+    <section id="s-end" class="card center" hidden>
+      <h2 id="e-title"></h2>
+      <p id="e-score"></p>
+      <ol class="leaderboard light" id="e-podium"></ol>
+      <a class="button" href="/">Play again</a>
+    </section>
+  </main>
+  <script src="/shared.js"></script>
+  <script src="/player.js"></script>
+</body>
+</html>

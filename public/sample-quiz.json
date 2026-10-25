@@ -1,0 +1,10 @@
+{
+  "title": "Amazing animals",
+  "questions": [
+    { "q": "Which animal is the largest on Earth?", "answers": ["Elephant", "Blue whale", "Giraffe", "Shark"], "correct": 1 },
+    { "q": "How many legs does a spider have?", "answers": ["6", "8", "10", "4"], "correct": 1 },
+    { "q": "Which animal can sleep standing up?", "answers": ["Horse", "Cat", "Frog", "Owl"], "correct": 0 },
+    { "q": "What do bees make?", "answers": ["Milk", "Silk", "Honey", "Wool"], "correct": 2 },
+    { "q": "Which bird cannot fly?", "answers": ["Eagle", "Sparrow", "Parrot", "Penguin"], "correct": 3 }
+  ]
+}

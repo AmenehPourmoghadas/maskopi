@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Maskopi Host</title>
+  <meta name="theme-color" content="#2b1055">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icon.svg">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="host">
+    <section id="s-setup">
+      <header class="bar"><h1 class="logo">Maskopi</h1><span>Host a game</span></header>
+      <div class="setup">
+        <div class="panel chat">
+          <h2>Quiz assistant</h2>
+          <div id="chat-log" class="chat-log" aria-live="polite"></div>
+          <form id="chat-form">
+            <textarea id="chat-input" rows="2" placeholder="e.g. Make a 10-question quiz about animals for 8-year-olds"></textarea>
+            <button id="chat-send">Send</button>
+          </form>
+          <p class="small">Please don't type children's names or other personal details. The assistant only makes child-friendly quizzes.</p>
+        </div>
+
+        <div class="panel">
+          <h2 id="quiz-title">No quiz yet</h2>
+          <ol id="quiz-list" class="quiz-list"></ol>
+          <div class="row">
+            <button id="start" disabled>Approve &amp; host game</button>
+            <button id="save" class="secondary" disabled>Save</button>
+            <button id="export" class="secondary" disabled>Export</button>
+            <label class="button secondary">Import<input type="file" id="import" accept=".json,application/json" hidden></label>
+            <button id="sample" class="secondary">Sample quiz</button>
+          </div>
+          <p class="error" id="setup-error"></p>
+          <h3>My quizzes</h3>
+          <ul id="saved" class="saved"></ul>
+          <p class="small">Saved in this browser only.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="s-lobby" class="stage" hidden>
+      <div class="join-info">
+        <div>
+          <p>Join at <strong id="join-host"></strong></p>
+          <p class="pin-big" id="pin-big"></p>
+        </div>
+        <div class="qr" id="qr"></div>
+      </div>
+      <div class="players" id="players"></div>
+      <p id="player-count">Waiting for players…</p>
+      <button id="begin" disabled>Start</button>
+      <p class="small light">Tap a player to remove them.</p>
+    </section>
+
+    <section id="s-progress" class="stage" hidden>
+      <h2>Game in progress</h2>
+      <p id="progress-summary"></p>
+      <ol class="leaderboard" id="progress-list"></ol>
+      <button id="end-game" class="secondary">End game now</button>
+    </section>
+
+    <section id="s-end" class="stage" hidden>
+      <h2>🏆 The winners</h2>
+      <ol class="leaderboard podium" id="e-ranking"></ol>
+      <button id="again">Host another game</button>
+    </section>
+  </main>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+  <script src="/shared.js"></script>
+  <script src="/host.js"></script>
+</body>
+</html>

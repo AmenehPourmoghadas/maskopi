@@ -1,0 +1,12 @@
+{
+  "name": "Maskopi",
+  "short_name": "Maskopi",
+  "description": "Free, private, AI-assisted quiz games for kids.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#2b1055",
+  "theme_color": "#2b1055",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
