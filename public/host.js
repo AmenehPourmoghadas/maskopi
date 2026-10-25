@@ -5,6 +5,7 @@ let savedId = null;
 let chat = [];
 let game = null; // { pin, hostKey }
 let ws = null;
+let music = "playful"; // a catalog id, or "" for no music
 
 // ---------- Quiz assistant ----------
 
@@ -17,7 +18,7 @@ function addMsg(role, text) {
   return div;
 }
 
-addMsg("assistant", "Hi! Tell me the topic and the children's age, and I'll make a quiz. You can also ask me to change the quiz on the right.");
+addMsg("assistant", "Hi! Tell me the topic and who the quiz is for (for example 8-year-olds, teenagers or a team of adults), and I'll make a quiz. You can type or tap 🎤 to speak, and ask me to change the quiz on the right.");
 
 $("chat-input").addEventListener("keydown", (e) => {
   if (e.key === "Enter" && !e.shiftKey) {
@@ -52,6 +53,7 @@ $("chat-form").onsubmit = async (e) => {
     return;
   }
   addMsg("assistant", data.reply);
+  speak(data.reply);
   chat.push({ role: "assistant", content: data.reply });
   if (data.quiz) {
     setQuiz(data.quiz, savedId);
@@ -59,23 +61,120 @@ $("chat-form").onsubmit = async (e) => {
   }
 };
 
+// ---------- Voice: speak to the assistant, hear its replies ----------
+
+const READ_ALOUD_KEY = "maskopi.readAloud";
+const MAX_RECORDING_MS = 30000;
+let recording = false;
+let recordingTimer = null;
+let spokenLanguage = null; // language Whisper heard, used for the reply voice
+
+$("mic").hidden = !Voice.supported;
+$("read-aloud").closest("label").hidden = !window.speechSynthesis;
+try {
+  $("read-aloud").checked = localStorage.getItem(READ_ALOUD_KEY) === "1";
+} catch {
+  // Storage unavailable: default off.
+}
+$("read-aloud").onchange = () => {
+  try {
+    localStorage.setItem(READ_ALOUD_KEY, $("read-aloud").checked ? "1" : "0");
+  } catch {
+    // Not remembered, but still works for this visit.
+  }
+  if (!$("read-aloud").checked) window.speechSynthesis?.cancel();
+};
+
+function speak(text) {
+  if (!$("read-aloud").checked || !window.speechSynthesis) return;
+  speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  if (spokenLanguage) utterance.lang = spokenLanguage;
+  speechSynthesis.speak(utterance);
+}
+
+$("mic").onclick = async () => {
+  if (!recording) {
+    window.speechSynthesis?.cancel();
+    try {
+      await Voice.start();
+    } catch {
+      addMsg("error", "The microphone is blocked. Allow it in your browser settings, or type instead.");
+      return;
+    }
+    recording = true;
+    Music.setPaused(true);
+    $("mic").textContent = "⏹";
+    $("mic").classList.add("recording");
+    $("mic").title = "Stop and send";
+    recordingTimer = setTimeout(() => recording && $("mic").click(), MAX_RECORDING_MS);
+    return;
+  }
+
+  clearTimeout(recordingTimer);
+  recording = false;
+  $("mic").classList.remove("recording");
+  $("mic").textContent = "…";
+  $("mic").disabled = true;
+  const wav = await Voice.stop();
+  Music.setPaused(false);
+
+  const data = await fetch("/api/voice", { method: "POST", headers: { "content-type": "audio/wav" }, body: wav })
+    .then((r) => r.json())
+    .catch(() => ({ error: "Could not reach the assistant. Check your connection." }));
+  $("mic").textContent = "🎤";
+  $("mic").title = "Speak to the assistant";
+  $("mic").disabled = false;
+  if (data.error) return addMsg("error", data.error);
+  if (!data.text) return addMsg("error", "I didn't catch that. Please try again.");
+  spokenLanguage = data.language;
+  $("chat-input").value = data.text;
+  $("chat-form").requestSubmit();
+};
+
 // ---------- Quiz preview, music, save, import, export ----------
 
 // The quiz plus the background music picked on the right-hand side.
 function currentQuiz() {
-  return { ...quiz, music: $("music").value || "none" };
+  return { ...quiz, music: music || "none" };
 }
 
-$("music").onchange = () => Music.setTheme($("music").value);
-Music.setTheme($("music").value);
+let musicCatalog = [];
+
+function selectMusic(id) {
+  music = id;
+  $("music-picker").querySelectorAll("button").forEach((b) => b.setAttribute("aria-pressed", b.dataset.id === id));
+  const track = musicCatalog.find((t) => t.id === id);
+  $("music-credit").textContent = track?.credit ? "Music: " + track.credit : "";
+  Music.setTheme(id);
+}
+
+Music.catalog().then((list) => {
+  musicCatalog = list;
+  const options = [{ id: "", name: "Off", emoji: "🔇" }, ...list];
+  $("music-picker").replaceChildren(
+    ...options.map((t) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "music-option";
+      b.dataset.id = t.id;
+      const icon = document.createElement("span");
+      icon.className = "music-emoji";
+      icon.textContent = t.emoji || "🎵";
+      const name = document.createElement("span");
+      name.textContent = t.name;
+      b.append(icon, name);
+      b.onclick = () => selectMusic(t.id);
+      return b;
+    }),
+  );
+  selectMusic(music);
+});
 
 function setQuiz(q, id = null) {
   quiz = q;
   savedId = id;
-  if (q.music) {
-    $("music").value = q.music === "none" ? "" : q.music;
-    Music.setTheme($("music").value);
-  }
+  if (q.music) selectMusic(q.music === "none" ? "" : q.music);
   $("quiz-title").textContent = q.title;
   $("quiz-list").replaceChildren(
     ...q.questions.map((item) => {

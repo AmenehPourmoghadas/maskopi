@@ -1,5 +1,5 @@
 import { GameRoom } from "./game.js";
-import { handleChat } from "./ai.js";
+import { handleChat, handleVoice } from "./ai.js";
 import { validateQuiz } from "./quiz.js";
 
 export { GameRoom };
@@ -9,8 +9,9 @@ export default {
     const url = new URL(request.url);
     const path = url.pathname;
 
-    if (path === "/api/chat" && request.method === "POST") return handleChat(request, env);
-    if (path === "/api/game" && request.method === "POST") return createGame(request, env);
+    if (path === "/api/chat" && request.method === "POST") return handleChat(request, env, await musicCatalog(env, url));
+    if (path === "/api/voice" && request.method === "POST") return handleVoice(request, env);
+    if (path === "/api/game" && request.method === "POST") return createGame(request, env, await musicCatalog(env, url));
 
     const socket = path.match(/^\/ws\/(\d{6})$/);
     if (socket) {
@@ -29,9 +30,23 @@ export default {
   },
 };
 
-async function createGame(request, env) {
+// The music library the host page shows is also what the AI may choose from.
+let catalogCache = null;
+async function musicCatalog(env, url) {
+  if (catalogCache) return catalogCache;
+  try {
+    const res = await env.ASSETS.fetch(new Request(new URL("/music/catalog.json", url)));
+    const list = await res.json();
+    if (Array.isArray(list)) catalogCache = list;
+    return list;
+  } catch {
+    return [];
+  }
+}
+
+async function createGame(request, env, catalog) {
   const body = await request.json().catch(() => null);
-  const quiz = validateQuiz(body?.quiz);
+  const quiz = validateQuiz(body?.quiz, catalog.map((t) => t.id));
   if (!quiz) return Response.json({ error: "That quiz is not valid." }, { status: 400 });
 
   // A PIN can collide with a game that is still running, so try a few.

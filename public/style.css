@@ -137,15 +137,32 @@ main.host { max-width: 1200px; margin: 0 auto; padding: 16px; }
 .msg.user { align-self: flex-end; background: var(--brand); color: #fff; }
 .msg.assistant { align-self: flex-start; background: var(--soft); }
 .msg.error { align-self: flex-start; background: #fde8eb; color: #9b1027; }
-#chat-form { grid-template-columns: 1fr auto; align-items: end; }
+#chat-form { grid-template-columns: 1fr auto auto; align-items: end; }
+#mic { font-size: 1.3rem; }
+#mic.recording { background: var(--bad); color: #fff; animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: 0.6; } }
+.check { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+.check input { width: auto; }
 
 .quiz-list { max-height: 40vh; overflow-y: auto; padding-left: 20px; }
 .quiz-list li { margin-bottom: 10px; }
 .quiz-list .ans { color: var(--muted); font-size: 0.9rem; }
 .quiz-list .ok { color: var(--ok); font-weight: 800; }
 
-.music-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; font-weight: 700; }
-.music-pick select { font: inherit; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; }
+.music-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; }
+.music-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-height: 84px;
+  padding: 10px;
+  background: var(--soft);
+  color: var(--ink);
+  border: 3px solid transparent;
+}
+.music-option[aria-pressed="true"] { border-color: var(--brand); background: #efe7ff; }
+.music-emoji { font-size: 2rem; }
 
 .sound-toggle {
   position: fixed;

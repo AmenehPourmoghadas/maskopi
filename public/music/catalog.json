@@ -1,0 +1,8 @@
+[
+  { "id": "playful", "name": "Playful", "emoji": "🎈", "moods": ["happy", "cheerful", "bouncy", "kids"] },
+  { "id": "halloween", "name": "Halloween", "emoji": "🎃", "moods": ["spooky", "halloween", "mysterious", "witch"] },
+  { "id": "calm", "name": "Calm", "emoji": "🌙", "moods": ["calm", "relaxed", "focus", "soft", "sleepy"] },
+  { "id": "groovy", "name": "Groovy", "emoji": "🌈", "moods": ["groovy", "70s", "funky", "tie-dye", "hippie", "retro", "disco"] },
+  { "id": "adventure", "name": "Adventure", "emoji": "⚔️", "moods": ["adventure", "epic", "heroic", "exciting", "action"] },
+  { "id": "winter", "name": "Winter", "emoji": "❄️", "moods": ["winter", "christmas", "jingle bells", "festive", "snow"] }
+]

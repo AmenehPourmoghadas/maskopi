@@ -18,23 +18,21 @@
           <h2>Quiz assistant</h2>
           <div id="chat-log" class="chat-log" aria-live="polite"></div>
           <form id="chat-form">
-            <textarea id="chat-input" rows="2" placeholder="e.g. Make a 10-question quiz about animals for 8-year-olds"></textarea>
+            <textarea id="chat-input" rows="2" placeholder="e.g. Make a 10-question quiz about space for a team of adults"></textarea>
+            <button type="button" id="mic" class="secondary" aria-label="Speak to the assistant" title="Speak to the assistant" hidden>🎤</button>
             <button id="chat-send">Send</button>
           </form>
-          <p class="small">Please don't type children's names or other personal details. The assistant only makes child-friendly quizzes.</p>
+          <label class="small check"><input type="checkbox" id="read-aloud"> 🔈 Read the assistant's replies aloud</label>
+          <p class="small">Please don't share names or other personal details about real people. The assistant won't make quizzes with sexual or harmful content. Your voice is only used to turn it into text and is not saved by Maskopi.</p>
         </div>
 
         <div class="panel">
           <h2 id="quiz-title">No quiz yet</h2>
           <ol id="quiz-list" class="quiz-list"></ol>
-          <label class="music-pick">🎵 Background music
-            <select id="music">
-              <option value="">Off</option>
-              <option value="playful" selected>Playful</option>
-              <option value="halloween">Halloween 🎃</option>
-            </select>
-          </label>
-          <p class="small">Plays on your screen and on the kids' tablets. Anyone can mute it with the 🔊 button.</p>
+          <h3>🎵 Background music</h3>
+          <div id="music-picker" class="music-grid" role="group" aria-label="Background music"></div>
+          <p class="small" id="music-credit"></p>
+          <p class="small">Plays on your screen and on the kids' tablets. Anyone can mute it with the 🔊 button. You can also ask the assistant, e.g. “use groovy music”.</p>
           <div class="row">
             <button id="start" disabled>Approve &amp; host game</button>
             <button id="save" class="secondary" disabled>Save</button>
@@ -80,6 +78,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
   <script src="/shared.js"></script>
   <script src="/music.js"></script>
+  <script src="/voice.js"></script>
   <script src="/host.js"></script>
 </body>
 </html>

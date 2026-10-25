@@ -1,14 +1,13 @@
 // Shape every quiz must have before it is shown or played:
 // { title, questions: [{ q, answers: [2-4 strings], correct: index, time?: seconds }] }
 // A question has no time limit unless "time" is given.
-// Optional "music" picks the background music theme (see public/music.js).
+// Optional "music" is a track id from public/music/catalog.json, or "none".
 const LIMITS = { questions: 50, answers: 4, title: 100, q: 200, a: 80 };
-const MUSIC = ["playful", "halloween", "none"];
 
 const text = (value, max) =>
   typeof value === "string" ? value.replace(/[\u0000-\u001f]/g, " ").trim().slice(0, max) : "";
 
-export function validateQuiz(input) {
+export function validateQuiz(input, musicIds = []) {
   if (!input || typeof input !== "object" || !Array.isArray(input.questions)) return null;
   const questions = [];
   for (const raw of input.questions.slice(0, LIMITS.questions)) {
@@ -26,6 +25,6 @@ export function validateQuiz(input) {
   }
   if (!questions.length) return null;
   const quiz = { title: text(input.title, LIMITS.title) || "Untitled quiz", questions };
-  if (MUSIC.includes(input.music)) quiz.music = input.music;
+  if (input.music === "none" || musicIds.includes(input.music)) quiz.music = input.music;
   return quiz;
 }
