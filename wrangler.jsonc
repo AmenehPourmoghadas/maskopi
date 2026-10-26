@@ -16,7 +16,6 @@
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["GameRoom"] }],
   "vars": {
     "CHAT_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
-    "GUARD_MODEL": "@cf/meta/llama-guard-3-8b",
     "VOICE_MODEL": "@cf/openai/whisper-large-v3-turbo"
   }
 }
