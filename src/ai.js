@@ -14,7 +14,7 @@ How to work:
 \`\`\`json
 {"title": "Planets", "questions": [{"q": "Which planet is closest to the Sun?", "answers": ["Mercury", "Venus", "Earth", "Mars"], "correct": 0}]}
 \`\`\`
-- "correct" is the 0-based index of the right answer. Use 2 to 4 answers per question and 3 to 20 questions.
+- "correct" is the 0-based index of the right answer. Use 2 to 4 answers per question. Make as many questions as the user asks for; if they don't say, make 10.
 - Questions have no time limit. Only if the user asks for a time limit, add "time" (seconds, 5 to 120) to the questions it applies to. If the user asks to remove a time limit, leave "time" out.
 - Keep questions under 120 characters and answers under 60 characters. Match the words and difficulty to the audience.
 - Facts must be correct. If you are not sure about a fact, leave that question out.
@@ -42,6 +42,24 @@ or
 {"allowed": false, "rule": "personal data" | "sexual content" | "harmful content" | "nonsense", "reason": "one short sentence"}`;
 
 const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
+const MAX_TOKENS = 4096; // per AI call; longer quizzes are continued in more calls
+const REVIEW_BATCH = 50; // questions per review call
+
+const QUOTA_MESSAGE = "The free daily AI quota is used up. Please upgrade, or try again tomorrow.";
+
+// Workers AI reports error 4006 when the free daily allocation is used up.
+function aiError(err) {
+  console.error(err);
+  if (/4006|daily free allocation|neurons/i.test(String(err?.message ?? err))) {
+    return Response.json({ error: QUOTA_MESSAGE }, { status: 429 });
+  }
+  return Response.json({ error: "The AI assistant isn't available right now. Please try again in a moment." }, { status: 503 });
+}
+
+async function complete(env, messages, options = {}) {
+  const result = await env.AI.run(env.CHAT_MODEL, { messages, max_tokens: MAX_TOKENS, temperature: 0.5, ...options });
+  return typeof result.response === "string" ? result.response : JSON.stringify(result.response ?? "");
+}
 
 // Turns a spoken request (a WAV recording from the host page) into text.
 // The audio is only passed to the speech model; Maskopi does not store it.
@@ -55,8 +73,7 @@ export async function handleVoice(request, env) {
     const result = await env.AI.run(env.VOICE_MODEL, { audio: toBase64(audio) });
     return Response.json({ text: (result.text || "").trim(), language: result.transcription_info?.language || null });
   } catch (err) {
-    console.error(err);
-    return Response.json({ error: "Voice input isn't available right now. Please type instead." }, { status: 503 });
+    return aiError(err);
   }
 }
 
@@ -100,13 +117,12 @@ export async function handleChat(request, env, catalog = []) {
       });
     }
 
-    const result = await env.AI.run(env.CHAT_MODEL, {
-      messages: [...context, ...messages],
-      max_tokens: 3000,
-      temperature: 0.5,
-    });
-    const text = typeof result.response === "string" ? result.response : JSON.stringify(result.response ?? "");
-    const { reply, quiz } = extractQuiz(text, musicIds);
+    const text = await complete(env, [...context, ...messages]);
+    let { reply, quiz } = extractQuiz(text, musicIds);
+    if (!quiz && isCutOff(text)) {
+      reply = text.slice(0, text.indexOf("```")).trim() || "Here is your quiz.";
+      quiz = await finishQuiz(env, [...context, ...messages], text, musicIds);
+    }
 
     // Second check: the finished quiz itself must follow the rules.
     if (quiz) {
@@ -119,24 +135,76 @@ export async function handleChat(request, env, catalog = []) {
     }
     return Response.json({ reply, quiz });
   } catch (err) {
-    console.error(err);
-    return Response.json(
-      { error: "The AI assistant isn't available right now. The free daily limit may be used up. You can still import a quiz file or use the sample quiz." },
-      { status: 503 },
-    );
+    return aiError(err);
   }
 }
 
+// An answer with an opening ``` but no closing one ran out of output length.
+function isCutOff(text) {
+  return (text.match(/```/g) || []).length === 1;
+}
+
+// The complete question objects in a (possibly cut-off) answer.
+function completeQuestions(text) {
+  const found = [];
+  for (const match of text.matchAll(/\{[^{}]*"q"\s*:[^{}]*\}/g)) {
+    try {
+      found.push(JSON.parse(match[0]));
+    } catch {
+      // A broken question is skipped.
+    }
+  }
+  return found;
+}
+
+function stringField(text, name) {
+  const raw = text.match(new RegExp(`"${name}"\\s*:\\s*("(?:[^"\\\\]|\\\\.)*")`))?.[1];
+  try {
+    return raw ? JSON.parse(raw) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+// Each AI call can only write so much, so a long quiz arrives in parts: keep
+// asking for the missing questions until the AI finishes or stops adding any.
+async function finishQuiz(env, conversation, firstText, musicIds) {
+  const start = firstText.slice(firstText.indexOf("```"));
+  const questions = completeQuestions(start);
+  for (let finished = false; !finished; ) {
+    const written = questions.map((q, i) => `${i + 1}. ${q.q}`).join("\n");
+    const text = await complete(env, [
+      ...conversation,
+      { role: "assistant", content: `(The quiz was cut off after ${questions.length} questions.)` },
+      {
+        role: "user",
+        content: `Continue the same quiz. Write only the questions that are still missing, as a JSON array in a code block, in the same format: [{"q": "...", "answers": ["...", "..."], "correct": 0}]. Do not repeat these questions:\n${written}`,
+      },
+    ]);
+    const more = completeQuestions(text);
+    questions.push(...more);
+    finished = !more.length || !isCutOff(text);
+  }
+  return validateQuiz({ title: stringField(start, "title"), music: stringField(start, "music"), questions }, musicIds);
+}
+
 async function review(env, request, quiz) {
-  const result = await env.AI.run(env.CHAT_MODEL, {
-    messages: [
+  for (let i = 0; i < quiz.questions.length; i += REVIEW_BATCH) {
+    const verdict = await reviewPart(env, request, { ...quiz, questions: quiz.questions.slice(i, i + REVIEW_BATCH) });
+    if (!verdict.allowed) return verdict;
+  }
+  return { allowed: true };
+}
+
+async function reviewPart(env, request, quiz) {
+  const text = await complete(
+    env,
+    [
       { role: "system", content: REVIEW },
       { role: "user", content: `Request: ${request}\n\nQuiz:\n${JSON.stringify(quiz)}` },
     ],
-    max_tokens: 200,
-    temperature: 0,
-  });
-  const text = typeof result.response === "string" ? result.response : JSON.stringify(result.response ?? "");
+    { max_tokens: 200, temperature: 0 },
+  );
   let verdict;
   try {
     verdict = JSON.parse(text.match(/\{[\s\S]*\}/)?.[0]);

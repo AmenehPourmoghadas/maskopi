@@ -35,7 +35,7 @@ $("chat-form").onsubmit = async (e) => {
   addMsg("user", text);
   chat.push({ role: "user", content: text });
   $("chat-send").disabled = true;
-  const thinking = addMsg("assistant", "Thinking…");
+  const thinking = addMsg("assistant", "Thinking… (a big quiz can take a minute or two)");
 
   const data = await fetch("/api/chat", {
     method: "POST",
