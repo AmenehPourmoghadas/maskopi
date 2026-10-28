@@ -101,7 +101,8 @@ export class GameRoom extends DurableObject {
     const taken = [...this.players.values()].some((p) => p.name.toLowerCase() === name.toLowerCase());
     if (taken) return fail(ws, "That nickname is taken. Try another one!");
 
-    const player = { id: crypto.randomUUID(), name, avatar: msg.avatar, score: 0, correct: 0, index: 0, done: false, ws };
+    // answers[n] is { i: chosen index or null if time ran out, s: seconds, ok }.
+    const player = { id: crypto.randomUUID(), name, avatar: msg.avatar, score: 0, correct: 0, index: 0, done: false, answers: [], ws };
     this.players.set(player.id, player);
     this.sockets.set(ws, player.id);
     const music = this.game.quiz.music;
@@ -162,11 +163,13 @@ export class GameRoom extends DurableObject {
     }
 
     const late = q.time && elapsed > q.time * 1000 + TIME_GRACE_MS;
-    if (!timedOut && !late && i === q.correct) {
+    const ok = !timedOut && !late && i === q.correct;
+    if (ok) {
       player.correct++;
       // Timed questions reward speed (500-1000 points); untimed ones give 1000.
       player.score += q.time ? Math.round(1000 * (1 - Math.min(elapsed / (q.time * 1000), 1) / 2)) : 1000;
     }
+    player.answers[player.index] = { i: timedOut ? null : i, s: Math.round(elapsed / 1000), ok };
 
     player.index++;
     if (player.index < this.total) {
@@ -203,7 +206,12 @@ export class GameRoom extends DurableObject {
     if (!this.game || this.phase === "ended") return;
     this.phase = "ended";
     const ranking = this.ranking();
-    send(this.host, { t: "end", total: this.total, ranking });
+    // The host gets every player's answers so they can review each one.
+    send(this.host, {
+      t: "end",
+      questions: this.game.quiz.questions.map(({ q, answers, correct }) => ({ q, answers, correct })),
+      ranking: ranking.map((r) => ({ ...r, answers: this.players.get(r.id).answers })),
+    });
     ranking.forEach((r, n) => {
       send(this.players.get(r.id).ws, { t: "end", rank: n + 1, score: r.score, correct: r.correct, total: this.total, podium: ranking.slice(0, 3) });
     });

@@ -379,14 +379,61 @@ function handle(msg) {
       break;
     }
     case "end":
-      $("e-ranking").replaceChildren(
-        ...msg.ranking.map((p, i) =>
-          leaderRow({ ...p, name: (["🥇 ", "🥈 ", "🥉 "][i] || "") + p.name, score: `${p.correct}/${msg.total} · ${p.score}` }),
-        ),
-      );
+      $("e-ranking").replaceChildren(...msg.ranking.map((p, i) => resultItem(p, i, msg.questions)));
       show("s-end");
       break;
   }
+}
+
+// A player on the results list; tapping opens their answer to each question.
+function resultItem(p, rank, questions) {
+  const li = document.createElement("li");
+  li.className = "result";
+
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "result-toggle";
+  toggle.setAttribute("aria-expanded", "false");
+  const who = document.createElement("span");
+  who.textContent = `${["🥇 ", "🥈 ", "🥉 "][rank] || ""}${p.avatar} ${p.name}`;
+  const score = document.createElement("span");
+  score.textContent = `${p.correct}/${questions.length} · ${p.score} ▾`;
+  toggle.append(who, score);
+
+  const detail = document.createElement("ol");
+  detail.className = "result-detail";
+  detail.hidden = true;
+  toggle.onclick = () => {
+    if (!detail.childElementCount) detail.append(...questions.map((q, n) => answerRow(q, p.answers[n])));
+    detail.hidden = !detail.hidden;
+    toggle.setAttribute("aria-expanded", String(!detail.hidden));
+  };
+
+  li.append(toggle, detail);
+  return li;
+}
+
+function answerRow(question, answer) {
+  const li = document.createElement("li");
+  const text = document.createElement("div");
+  text.textContent = question.q;
+  const result = document.createElement("div");
+  const right = question.answers[question.correct];
+  if (!answer) {
+    li.className = "skip";
+    result.textContent = `— Not answered (left the game) · correct: ${right}`;
+  } else if (answer.i === null) {
+    li.className = "bad";
+    result.textContent = `⏱ Time ran out · correct: ${right}`;
+  } else if (answer.ok) {
+    li.className = "ok";
+    result.textContent = `✓ ${question.answers[answer.i]} · ${answer.s}s`;
+  } else {
+    li.className = "bad";
+    result.textContent = `✗ ${question.answers[answer.i]} · correct: ${right} · ${answer.s}s`;
+  }
+  li.append(text, result);
+  return li;
 }
 
 function leaderRow(p) {

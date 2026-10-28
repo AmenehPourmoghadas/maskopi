@@ -217,7 +217,34 @@ main.host { max-width: 1200px; margin: 0 auto; padding: 16px; }
 }
 .leaderboard.light li { background: var(--soft); }
 .leaderboard li.offline { opacity: 0.5; }
-.podium li:nth-child(-n + 3) { font-size: 1.3rem; }
+.podium > li:nth-child(-n + 3) { font-size: 1.3rem; }
+
+.leaderboard li.result { display: block; padding: 0; }
+.result-toggle {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  background: none;
+  color: var(--ink);
+  font-size: inherit;
+  text-align: left;
+}
+.result-detail { margin: 0; padding: 0 14px 12px 40px; font-size: 0.95rem; }
+.leaderboard .result-detail li {
+  display: block;
+  margin: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--soft);
+  border-radius: 0;
+  background: none;
+  font-weight: 400;
+}
+.result-detail li > div:last-child { font-weight: 700; }
+.result-detail .ok > div:last-child { color: var(--ok); }
+.result-detail .bad > div:last-child { color: var(--bad); }
+.result-detail .skip > div:last-child { color: var(--muted); }
 
 @media (max-width: 800px) {
   .setup { grid-template-columns: 1fr; }
